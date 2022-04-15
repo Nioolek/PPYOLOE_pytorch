@@ -28,8 +28,8 @@ Now, there are some differences between this code and the official version. I wi
 ### Installation
 Step1. Install from source.(No difference from the Megvii YOLOX)
 ```shell
-git clone git@github.com:Megvii-BaseDetection/YOLOX.git
-cd YOLOX
+git clone git@github.com:Nioolek/PPYOLOE_pytorch.git
+cd PPYOLOE_pytorch
 pip3 install -v -e .  # or  python3 setup.py develop
 ```
 
