@@ -49,7 +49,7 @@ cd <PPYOLOE_pytorch_HOME>
 ln -s /path/to/your/COCO ./datasets/COCO
 ```
 
-Step2. Reproduce our results on COCO by specifying -n:
+Step2. Reproduce our results on COCO by specifying -f:
 ```shell
 python -m yolox.tools.train -f exps/ppyoloe/default/ppyoloe_l.py -d 8 -b 64 --fp16 -o [--cache]
 ```
