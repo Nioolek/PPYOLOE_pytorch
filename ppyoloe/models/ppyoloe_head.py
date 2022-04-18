@@ -31,6 +31,7 @@ class ESEAttn(nn.Module):
 class PPYOLOEHead(nn.Module):
     def __init__(self,
                  in_channels=[1024, 512, 256],
+                 width_mult=1.0,
                  num_classes=80,
                  act='swish',
                  fpn_strides=(32, 16, 8),
@@ -50,6 +51,7 @@ class PPYOLOEHead(nn.Module):
                  atss_topk=9):
         super(PPYOLOEHead, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
+        in_channels = [max(round(c * width_mult), 1) for c in in_channels]
         self.in_channels = in_channels
         self.num_classes = num_classes
         self.fpn_strides = fpn_strides

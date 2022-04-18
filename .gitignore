@@ -226,3 +226,6 @@ weights
 
 # paddle weights
 *pdparams
+
+paddle2torch.py
+test_inference.py

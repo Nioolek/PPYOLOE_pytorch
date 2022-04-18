@@ -8,7 +8,7 @@ Many codes references from [PP-YOLOE Official implementation](https://github.com
 * 【2022/04/15】 Initial commit support training, eval, demo for ppyoloe-s/m/l/x.
 
 ## Comming soon
-- [ ] PP-YOLOE Model Deploy.
+- [ ] PP-YOLOE model deploy.
 - [ ] More pretrained model.
 - [ ] More experiments results.
 - [ ] Code to convert PP-YOLOE model from PaddlePaddle to Pytorch.

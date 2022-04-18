@@ -108,6 +108,7 @@ class CustomCSPPAN(nn.Module):
                  depth_mult=1.0,
                  ):
         super().__init__()
+        in_channels = [max(round(c * width_mult), 1) for c in in_channels]
         out_channels = [max(round(c * width_mult), 1) for c in out_channels]
         block_num = max(round(block_num * depth_mult), 1)
         act = get_activation(act) if act is None or isinstance(act,
@@ -117,6 +118,7 @@ class CustomCSPPAN(nn.Module):
         in_channels = in_channels[::-1]
         self.fpn_stages = nn.ModuleList()
         self.fpn_routes = nn.ModuleList()
+
 
         for i, (ch_in, ch_out) in enumerate(zip(in_channels, out_channels)):
             if i > 0:
@@ -191,10 +193,10 @@ class CustomCSPPAN(nn.Module):
         for i, block in enumerate(blocks):
             if i > 0:
                 block = torch.cat([route, block], axis=1)
-            route = block
-            for layer in self.fpn_stages[i]:
-                route = layer(block)
-            # route = self.fpn_stages[i](block)
+            # route = block
+            # for layer in self.fpn_stages[i]:
+            #     route = layer(block)
+            route = self.fpn_stages[i](block)
             fpn_feats.append(route)
 
             if i < self.num_blocks - 1:

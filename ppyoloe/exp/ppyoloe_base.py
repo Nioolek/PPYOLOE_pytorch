@@ -141,6 +141,7 @@ class ExpE(BaseExp):
             ),
             head=PPYOLOEHead(
                 in_channels=[768, 384, 192],
+                width_mult=self.width,
                 fpn_strides=[32, 16, 8],
                 grid_cell_scale=5.0,
                 grid_cell_offset=0.5,
