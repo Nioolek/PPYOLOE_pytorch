@@ -1,4 +1,7 @@
 
+## warning
+!!!Now, the code cannot reproduce the mAp result on coco.Please don`t use it.
+
 ## Introduction
 An unofficial implementation of Pytorch version PP-YOLOE,based on  Megvii YOLOX training code.
 Many codes references from [PP-YOLOE Official implementation](https://github.com/PaddlePaddle/PaddleDetection) and [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX).
@@ -38,8 +41,9 @@ Step1. Download a pretrained model from the benchmark table.
 
 Step2. Run demo.py
 ```shell
-python tools/demo.py image -f exps/ppyoloe/default/ppyoloe_l.py -c /path/to/your/ppyoloe_l.pth --path assets/dog.jpg --conf 0.25 --nms 0.45 --tsize 640 --save_result --device [cpu/gpu]
+python tools/demo.py image -f exps/ppyoloe/default/ppyoloe_l.py -c /path/to/your/ppyoloe_l.pth --path assets/dog.jpg --conf 0.25 --nms 0.45 --tsize 640 --save_result --device [cpu/gpu] --ppyoloe
 ```
+Because of the difference in preprocess, you must use the args '--ppyoloe' and '--legacy' while inference and eval.
 
 ### Train
 

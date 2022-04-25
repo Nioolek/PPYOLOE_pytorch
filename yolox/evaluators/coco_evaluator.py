@@ -120,6 +120,7 @@ class COCOEvaluator:
         trt_file=None,
         decoder=None,
         test_size=None,
+        ppyoloe=False,
     ):
         """
         COCO average precision (AP) Evaluation. Iterate inference on the test dataset
@@ -184,7 +185,8 @@ class COCOEvaluator:
                     nms_end = time_synchronized()
                     nms_time += nms_end - infer_end
 
-            data_list.extend(self.convert_to_coco_format(outputs, info_imgs, ids))
+            data_list.extend(self.convert_to_coco_format(outputs, info_imgs, ids, ppyoloe=ppyoloe))
+
 
         statistics = torch.cuda.FloatTensor([inference_time, nms_time, n_samples])
         if distributed:
@@ -196,7 +198,7 @@ class COCOEvaluator:
         synchronize()
         return eval_results
 
-    def convert_to_coco_format(self, outputs, info_imgs, ids):
+    def convert_to_coco_format(self, outputs, info_imgs, ids, ppyoloe=False):
         data_list = []
         for (output, img_h, img_w, img_id) in zip(
             outputs, info_imgs[0], info_imgs[1], ids
@@ -207,11 +209,18 @@ class COCOEvaluator:
 
             bboxes = output[:, 0:4]
 
-            # preprocessing: resize
-            scale = min(
-                self.img_size[0] / float(img_h), self.img_size[1] / float(img_w)
-            )
-            bboxes /= scale
+            if ppyoloe:
+                scale_hw = (
+                    self.img_size[0] / float(img_h), self.img_size[1] / float(img_w)
+                )
+                bboxes[:, ::2] /= scale_hw[1]
+                bboxes[:, 1::2] /= scale_hw[0]
+            else:
+                # preprocessing: resize
+                scale = min(
+                    self.img_size[0] / float(img_h), self.img_size[1] / float(img_w)
+                )
+                bboxes /= scale
             bboxes = xyxy2xywh(bboxes)
 
             cls = output[:, 6]

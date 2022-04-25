@@ -93,7 +93,7 @@ class ExpE(BaseExp):
         self.print_interval = 10
         # eval period in epoch, for example,
         # if set to 1, model will be evaluate after every epoch.
-        self.eval_interval = 5
+        self.eval_interval = 10
         # save history checkpoint or not.
         # If set to False, yolox will only save latest and best ckpt.
         self.save_history_ckpt = True
@@ -169,6 +169,7 @@ class ExpE(BaseExp):
     ):
         from yolox.data import (
             COCODataset,
+            COCODatasetPPYOLOE,
             TrainTransform,
             YoloBatchSampler,
             DataLoader,
@@ -184,14 +185,17 @@ class ExpE(BaseExp):
         local_rank = get_local_rank()
 
         with wait_for_the_master(local_rank):
-            dataset = COCODataset(
+            dataset = COCODatasetPPYOLOE(
                 data_dir=self.data_dir,
                 json_file=self.train_ann,
                 img_size=self.input_size,
                 preproc=TrainTransform(
                     max_labels=50,
                     flip_prob=self.flip_prob,
-                    hsv_prob=self.hsv_prob),
+                    hsv_prob=self.hsv_prob,
+                    legacy=True,
+                    ppyoloe=True,
+                ),
                 cache=cache_img,
             )
 
@@ -316,15 +320,15 @@ class ExpE(BaseExp):
         )
         return scheduler
 
-    def get_eval_loader(self, batch_size, is_distributed, testdev=False, legacy=False):
-        from yolox.data import COCODataset, ValTransform
+    def get_eval_loader(self, batch_size, is_distributed, testdev=False, legacy=True, ppyoloe=True):
+        from yolox.data import COCODataset, ValTransform, COCODatasetPPYOLOE
 
-        valdataset = COCODataset(
+        valdataset = COCODatasetPPYOLOE(
             data_dir=self.data_dir,
             json_file=self.val_ann if not testdev else self.test_ann,
             name="val2017" if not testdev else "test2017",
             img_size=self.test_size,
-            preproc=ValTransform(legacy=legacy),
+            preproc=ValTransform(legacy=legacy, ppyoloe=ppyoloe),
         )
 
         if is_distributed:
@@ -345,10 +349,10 @@ class ExpE(BaseExp):
 
         return val_loader
 
-    def get_evaluator(self, batch_size, is_distributed, testdev=False, legacy=False):
+    def get_evaluator(self, batch_size, is_distributed, testdev=False, legacy=True, ppyoloe=True):
         from yolox.evaluators import COCOEvaluator
 
-        val_loader = self.get_eval_loader(batch_size, is_distributed, testdev, legacy)
+        val_loader = self.get_eval_loader(batch_size, is_distributed, testdev, legacy, ppyoloe=ppyoloe)
         evaluator = COCOEvaluator(
             dataloader=val_loader,
             img_size=self.test_size,
@@ -360,4 +364,4 @@ class ExpE(BaseExp):
         return evaluator
 
     def eval(self, model, evaluator, is_distributed, half=False):
-        return evaluator.evaluate(model, is_distributed, half)
+        return evaluator.evaluate(model, is_distributed, half, ppyoloe=True)

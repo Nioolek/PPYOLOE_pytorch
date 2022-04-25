@@ -97,6 +97,13 @@ def make_parser():
         help="speed test only.",
     )
     parser.add_argument(
+        "--ppyoloe",
+        dest="ppyoloe",
+        default=False,
+        action="store_true",
+        help="ppyoloe.",
+    )
+    parser.add_argument(
         "opts",
         help="Modify config options using the command-line",
         default=None,
@@ -184,7 +191,7 @@ def main(exp, args, num_gpu):
 
     # start evaluate
     *_, summary = evaluator.evaluate(
-        model, is_distributed, args.fp16, trt_file, decoder, exp.test_size
+        model, is_distributed, args.fp16, trt_file, decoder, exp.test_size, ppyoloe=args.ppyoloe
     )
     logger.info("\n" + summary)
 

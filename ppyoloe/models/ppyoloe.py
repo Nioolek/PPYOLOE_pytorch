@@ -20,3 +20,4 @@ class PPYOLOE(nn.Module):
         else:
             outputs = self.head(neck_feats)
             return outputs
+

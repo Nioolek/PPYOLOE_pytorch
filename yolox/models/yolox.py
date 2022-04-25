@@ -25,7 +25,7 @@ class YOLOX(nn.Module):
         self.backbone = backbone
         self.head = head
 
-    def forward(self, x, targets=None):
+    def forward(self, x, targets=None, extra_info=None):
         # fpn output content features of [dark3, dark4, dark5]
         fpn_outs = self.backbone(x)
 

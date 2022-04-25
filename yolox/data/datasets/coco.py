@@ -193,6 +193,8 @@ class COCODataset(Dataset):
         img = cv2.imread(img_file)
         assert img is not None
 
+
+
         return img
 
     def pull_item(self, index):
@@ -232,3 +234,78 @@ class COCODataset(Dataset):
         if self.preproc is not None:
             img, target = self.preproc(img, target, self.input_dim)
         return img, target, img_info, img_id
+
+class COCODatasetPPYOLOE(COCODataset):
+
+    def load_anno_from_ids(self, id_):
+        im_ann = self.coco.loadImgs(id_)[0]
+        width = im_ann["width"]
+        height = im_ann["height"]
+        anno_ids = self.coco.getAnnIds(imgIds=[int(id_)], iscrowd=False)
+        annotations = self.coco.loadAnns(anno_ids)
+        objs = []
+        for obj in annotations:
+            x1 = np.max((0, obj["bbox"][0]))
+            y1 = np.max((0, obj["bbox"][1]))
+            x2 = np.min((width, x1 + np.max((0, obj["bbox"][2]))))
+            y2 = np.min((height, y1 + np.max((0, obj["bbox"][3]))))
+            if obj["area"] > 0 and x2 >= x1 and y2 >= y1:
+                obj["clean_bbox"] = [x1, y1, x2, y2]
+                objs.append(obj)
+
+        num_objs = len(objs)
+
+        res = np.zeros((num_objs, 5))
+
+        for ix, obj in enumerate(objs):
+            cls = self.class_ids.index(obj["category_id"])
+            res[ix, 0:4] = obj["clean_bbox"]
+            res[ix, 4] = cls
+
+        r_hw = [self.img_size[0] / height, self.img_size[1] / width]
+        res[:, 0:4:2] *= r_hw[1]
+        res[:, 1:4:2] *= r_hw[0]
+        # res[:, :4] *= r
+
+        img_info = (height, width)
+        # resized_info = (int(height * r_hw[0]), int(width * r_hw[1]))
+        resized_info = self.img_size
+
+        file_name = (
+            im_ann["file_name"]
+            if "file_name" in im_ann
+            else "{:012}".format(id_) + ".jpg"
+        )
+
+        return (res, img_info, resized_info, file_name)
+
+
+    def load_resized_img(self, index):
+        img = self.load_image(index)
+        r_hw = [self.img_size[0] / img.shape[0], self.img_size[1] / img.shape[1]]
+        resized_img = cv2.resize(
+            img,
+            self.img_size,
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.uint8)
+        return resized_img
+
+    def pull_item(self, index):
+        id_ = self.ids[index]
+
+        res, img_info, resized_info, _ = self.annotations[index]
+        # if self.imgs is not None:
+        #     pad_img = self.imgs[index]
+        #     img = pad_img[: resized_info[0], : resized_info[1], :].copy()
+        # else: img,res都是resize后的结果.img_info是原图的大小
+        img = self.load_resized_img(index)
+
+        return img, res.copy(), img_info, np.array([id_])
+
+    # def __getitem__(self, index):
+    #     img, target, img_info, img_id = self.pull_item(index)
+    #
+    #     if self.preproc is not None:
+    #         img, target = self.preproc(img, target, self.input_dim)
+    #     return img, target, img_info, img_id
+

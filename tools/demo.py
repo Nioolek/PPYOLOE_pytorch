@@ -83,6 +83,14 @@ def make_parser():
         action="store_true",
         help="Using TensorRT model for testing.",
     )
+
+    parser.add_argument(
+        "--ppyoloe",
+        dest="ppyoloe",
+        default=False,
+        action="store_true",
+        help="PPYOLOE flag.",
+    )
     return parser
 
 
@@ -108,6 +116,7 @@ class Predictor(object):
         device="cpu",
         fp16=False,
         legacy=False,
+        ppyoloe=False,
     ):
         self.model = model
         self.cls_names = cls_names
@@ -118,7 +127,8 @@ class Predictor(object):
         self.test_size = exp.test_size
         self.device = device
         self.fp16 = fp16
-        self.preproc = ValTransform(legacy=legacy)
+        self.preproc = ValTransform(legacy=legacy, ppyoloe=ppyoloe)
+        self.ppyoloe = ppyoloe
         if trt_file is not None:
             from torch2trt import TRTModule
 
@@ -142,8 +152,13 @@ class Predictor(object):
         img_info["width"] = width
         img_info["raw_img"] = img
 
-        ratio = min(self.test_size[0] / img.shape[0], self.test_size[1] / img.shape[1])
-        img_info["ratio"] = ratio
+        if self.ppyoloe:
+            ratio = (self.test_size[0] / img.shape[0], self.test_size[1] / img.shape[1])
+            img_info["ratio"] = ratio
+            img_info['ppyoloe'] = self.ppyoloe
+        else:
+            ratio = min(self.test_size[0] / img.shape[0], self.test_size[1] / img.shape[1])
+            img_info["ratio"] = ratio
 
         img, _ = self.preproc(img, None, self.test_size)
         img = torch.from_numpy(img).unsqueeze(0)
@@ -171,11 +186,13 @@ class Predictor(object):
         if output is None:
             return img
         output = output.cpu()
-
         bboxes = output[:, 0:4]
-
-        # preprocessing: resize
-        bboxes /= ratio
+        if self.ppyoloe:
+            bboxes[:, ::2] /= ratio[1]
+            bboxes[:, 1::2] /= ratio[0]
+        else:
+            # preprocessing: resize
+            bboxes /= ratio
 
         cls = output[:, 6]
         scores = output[:, 4] * output[:, 5]
@@ -304,7 +321,7 @@ def main(exp, args):
 
     predictor = Predictor(
         model, exp, COCO_CLASSES, trt_file, decoder,
-        args.device, args.fp16, args.legacy,
+        args.device, args.fp16, args.legacy, args.ppyoloe
     )
     current_time = time.localtime()
     if args.demo == "image":
