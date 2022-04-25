@@ -41,7 +41,7 @@ Step1. Download a pretrained model from the benchmark table.
 
 Step2. Run demo.py
 ```shell
-python tools/demo.py image -f exps/ppyoloe/default/ppyoloe_l.py -c /path/to/your/ppyoloe_l.pth --path assets/dog.jpg --conf 0.25 --nms 0.45 --tsize 640 --save_result --device [cpu/gpu] --ppyoloe
+python tools/demo.py image -f exps/ppyoloe/default/ppyoloe_l.py -c /path/to/your/ppyoloe_l.pth --path assets/dog.jpg --conf 0.25 --nms 0.45 --tsize 640 --save_result --device [cpu/gpu] --ppyoloe --legacy
 ```
 Because of the difference in preprocess, you must use the args '--ppyoloe' and '--legacy' while inference and eval.
 
@@ -60,8 +60,9 @@ python -m yolox.tools.train -f exps/ppyoloe/default/ppyoloe_l.py -d 8 -b 64 --fp
 
 ### Evaluation
 ```
-python -m yolox.tools.eval -f  exps/ppyoloe/default/ppyoloe_l.py -c ppyoloe_l.pth -b 64 -d 8 --conf 0.001 [--fp16] [--fuse]
+python -m yolox.tools.eval -f  exps/ppyoloe/default/ppyoloe_l.py -c ppyoloe_l.pth -b 64 -d 8 --conf 0.001 --legacy --ppyoloe [--fp16] [--fuse]
 ```
+Because of the difference in preprocess, you must use the args '--ppyoloe' and '--legacy' while inference and eval.
 
 More details can find from the docs of [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX).
 
