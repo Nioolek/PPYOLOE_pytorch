@@ -213,7 +213,7 @@ class Trainer:
                 self.model.module.head.use_l1 = True
             else:
                 self.model.head.use_l1 = True
-            self.exp.eval_interval = 1
+            # self.exp.eval_interval = 1
             if not self.no_aug:
                 self.save_ckpt(ckpt_name="last_mosaic_epoch")
 

@@ -89,6 +89,14 @@ class LRScheduler:
             ]
             gamma = getattr(self, "gamma", 0.1)
             lr_func = partial(multistep_lr, self.lr, milestones, gamma)
+        elif name == 'ppyoloelr':
+            start_factor = getattr(self, "start_factor", 0.)
+            warmup_total_iters = self.iters_per_epoch * self.warmup_epochs
+            min_lr_ratio = getattr(self, "min_lr_ratio", 0.2)
+            lr_max_epochs = getattr(self, "lr_max_epochs", 360)
+            ppyoloe_total_iters = self.iters_per_epoch * lr_max_epochs
+            lr_func = partial(ppyoloe_lr, self.lr, start_factor, warmup_total_iters, min_lr_ratio,
+                              ppyoloe_total_iters)
         else:
             raise ValueError("Scheduler version {} not supported.".format(name))
         return lr_func
@@ -146,6 +154,27 @@ def yolox_warm_cos_lr(
             )
         )
     return lr
+
+
+def ppyoloe_lr(
+        lr,
+        start_factor,
+        warmup_total_iters,
+        min_lr_ratio,
+        total_iters,
+        iters
+):
+    min_lr = lr * min_lr_ratio
+    if iters <= warmup_total_iters:
+        alpha = iters / warmup_total_iters
+        factor = start_factor * (1-alpha)+alpha
+        lr = lr * factor
+    else:
+        lr = min_lr + (lr - min_lr) * 0.5 * (math.cos(
+            (iters - warmup_total_iters) * math.pi /
+            (total_iters - warmup_total_iters)) + 1.0)
+    return lr
+
 
 
 def yolox_semi_warm_cos_lr(

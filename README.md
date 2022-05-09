@@ -8,6 +8,7 @@ Many codes references from [PP-YOLOE Official implementation](https://github.com
 [Report on Arxiv](https://arxiv.org/pdf/2203.16250.pdf)
 
 ## Updates
+* 【2022/05/09】 Fix some bugs. Add the data augmentation methods in Paddle version
 * 【2022/04/15】 Initial commit support training, eval, demo for ppyoloe-s/m/l/x.
 
 ## Comming soon

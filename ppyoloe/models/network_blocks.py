@@ -59,7 +59,7 @@ class ConvBNLayer(nn.Module):
             groups=groups,
             bias=False
         )
-        self.bn = nn.BatchNorm2d(ch_out)
+        self.bn = nn.BatchNorm2d(ch_out, )
         self.act = get_activation(act, inplace=True)
 
     def forward(self, x):

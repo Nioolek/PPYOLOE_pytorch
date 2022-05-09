@@ -327,7 +327,8 @@ def main(exp, args):
     if args.demo == "image":
         image_demo(predictor, vis_folder, args.path, current_time, args.save_result)
     elif args.demo == "video" or args.demo == "webcam":
-        imageflow_demo(predictor, vis_folder, current_time, args)
+        raise NotImplementedError
+        # imageflow_demo(predictor, vis_folder, current_time, args)
 
 
 if __name__ == "__main__":

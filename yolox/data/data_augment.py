@@ -15,6 +15,7 @@ import random
 import cv2
 import numpy as np
 
+from yolox.data.operators import RandomDistort, RandomExpand, RandomCrop, RandomFlip
 from yolox.utils import xyxy2cxcywh
 
 
@@ -235,6 +236,52 @@ class TrainTransform:
 
         return image_t, padded_labels
 
+
+class TrainTransformPPYOLOE:
+    def __init__(self,
+                 max_labels=50,
+                 ):
+        self.max_labels = max_labels
+        self.aug_list = [
+            RandomDistort(),
+            RandomExpand(fill_value=(123.675, 116.28, 103.53)),
+            RandomCrop(),
+            RandomFlip(),
+        ]
+
+    def __call__(self, image, targets, input_dim):
+        image = image.copy()
+        # print('-1', targets)
+        for ind, aug in enumerate(self.aug_list):
+            image, targets = aug.apply(image, targets)
+            # print(ind, type(image), type(targets))
+        boxes = targets[:, :4].copy()
+        labels = targets[:, 4].copy()
+
+        # 这里已经把图变成1:1比例
+        image, r_ = preproc(image, input_dim, ppyoloe=True)
+        boxes = xyxy2cxcywh(boxes)
+        boxes[:, ::2] *= r_[1]
+        boxes[:, 1::2] *= r_[0]
+
+        mask_b = np.minimum(boxes[:, 2], boxes[:, 3]) > 1
+        boxes_t = boxes[mask_b]
+        labels_t = labels[mask_b]
+        labels_t = np.expand_dims(labels_t, 1)
+        targets_t = np.hstack((labels_t, boxes_t))
+        padded_labels = np.zeros((self.max_labels, 5))
+        padded_labels[range(len(targets_t))[: self.max_labels]] = targets_t[
+                                                                  : self.max_labels
+                                                                  ]
+        padded_labels = np.ascontiguousarray(padded_labels, dtype=np.float32)
+
+        # BGR2RGB
+        image_t = image[::-1, :, :].copy()
+        image_t /= 255.0
+        image_t -= np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
+        image_t /= np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+
+        return image_t, padded_labels
 
 class ValTransform:
     """

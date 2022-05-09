@@ -31,13 +31,13 @@ class ExpE(BaseExp):
         # ---------------- dataloader config ---------------- #
         # set worker to 4 for shorter dataloader init time
         # If your training process cost many memory, reduce this value.
-        self.data_num_workers = 4
-        self.input_size = (544, 544)  # (height, width)
+        self.data_num_workers = 12
+        self.input_size = (768, 768)  # (height, width)
         # Actual multiscale ranges: [640 - 5 * 32, 640 + 5 * 32].
         # To disable multiscale training, set the value to 0.
-        self.multiscale_range = 7
+        # self.multiscale_range = 7
         # You can uncomment this line to specify a multiscale range
-        # self.random_size = (14, 26)
+        self.random_size = (10, 24)
         # dir of dataset images, if data_dir is None, this project will use `datasets` dir
         self.data_dir = None
         # name of annotation file for training
@@ -74,13 +74,15 @@ class ExpE(BaseExp):
         self.max_epoch = 300
         # minimum learning rate during warmup
         self.warmup_lr = 0
-        self.min_lr_ratio = 0.05
+        self.min_lr_ratio = 0.
+        self.lr_max_epochs = 360
+        self.start_factor = 0.
         # learning rate for one image. During training, lr will multiply batchsize.
         self.basic_lr_per_img = 0.025 / 64.0
         # name of LRScheduler
-        self.scheduler = "yoloxwarmcos"
+        self.scheduler = "ppyoloelr"
         # last #epoch to close augmention like mosaic
-        self.no_aug_epochs = 15
+        self.no_aug_epochs = 300
         # apply EMA during training
         self.ema = True
 
@@ -169,13 +171,14 @@ class ExpE(BaseExp):
     ):
         from yolox.data import (
             COCODataset,
-            COCODatasetPPYOLOE,
+            # COCODatasetPPYOLOE,
             TrainTransform,
             YoloBatchSampler,
             DataLoader,
             InfiniteSampler,
             MosaicDetection,
             worker_init_reset_seed,
+            TrainTransformPPYOLOE
         )
         from yolox.utils import (
             wait_for_the_master,
@@ -185,16 +188,12 @@ class ExpE(BaseExp):
         local_rank = get_local_rank()
 
         with wait_for_the_master(local_rank):
-            dataset = COCODatasetPPYOLOE(
+            dataset = COCODataset(
                 data_dir=self.data_dir,
                 json_file=self.train_ann,
                 img_size=self.input_size,
-                preproc=TrainTransform(
+                preproc=TrainTransformPPYOLOE(
                     max_labels=50,
-                    flip_prob=self.flip_prob,
-                    hsv_prob=self.hsv_prob,
-                    legacy=True,
-                    ppyoloe=True,
                 ),
                 cache=cache_img,
             )
@@ -263,6 +262,7 @@ class ExpE(BaseExp):
         input_size = (tensor[0].item(), tensor[1].item())
         return input_size
 
+    # 这个是在训练前做的
     def preprocess(self, inputs, targets, tsize):
         scale_y = tsize[0] / self.input_size[0]
         scale_x = tsize[1] / self.input_size[1]
@@ -292,6 +292,8 @@ class ExpE(BaseExp):
                 if isinstance(v, nn.BatchNorm2d) or "bn" in k:
                     pg0.append(v.weight)  # no decay
                 elif hasattr(v, "weight") and isinstance(v.weight, nn.Parameter):
+                    if not v.weight.requires_grad:
+                        continue
                     pg1.append(v.weight)  # apply decay
 
             optimizer = torch.optim.SGD(
@@ -313,17 +315,19 @@ class ExpE(BaseExp):
             lr,
             iters_per_epoch,
             self.max_epoch,
-            warmup_epochs=self.warmup_epochs,
-            warmup_lr_start=self.warmup_lr,
-            no_aug_epochs=self.no_aug_epochs,
+            lr_max_epochs=self.lr_max_epochs,
+            start_factor=self.start_factor,
             min_lr_ratio=self.min_lr_ratio,
+            warmup_epochs=self.warmup_epochs,
+            # warmup_lr_start=self.warmup_lr,
+            # no_aug_epochs=self.no_aug_epochs,
         )
         return scheduler
 
     def get_eval_loader(self, batch_size, is_distributed, testdev=False, legacy=True, ppyoloe=True):
-        from yolox.data import COCODataset, ValTransform, COCODatasetPPYOLOE
+        from yolox.data import COCODataset, ValTransform
 
-        valdataset = COCODatasetPPYOLOE(
+        valdataset = COCODataset(
             data_dir=self.data_dir,
             json_file=self.val_ann if not testdev else self.test_ann,
             name="val2017" if not testdev else "test2017",
