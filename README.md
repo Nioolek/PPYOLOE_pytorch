@@ -81,7 +81,6 @@ The download url of Paddle pretrained model can get from [PaddleDetection](https
 
 
 ## More information
-* Because of lack of GPUs,I am now training the model.I hope the code can reproduce the PP-YOLOE results on COCO.
 * You are welcome to report bugs.
 
 ## Reference
