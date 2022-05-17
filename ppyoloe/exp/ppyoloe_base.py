@@ -27,11 +27,12 @@ class ExpE(BaseExp):
         self.width = 1.00
         # activation name. For example, if using "relu", then "silu" will be replaced to "relu".
         self.act = 'swish'
+        self.sybn = True
 
         # ---------------- dataloader config ---------------- #
         # set worker to 4 for shorter dataloader init time
         # If your training process cost many memory, reduce this value.
-        self.data_num_workers = 12
+        self.data_num_workers = 10
         self.input_size = (768, 768)  # (height, width)
         # Actual multiscale ranges: [640 - 5 * 32, 640 + 5 * 32].
         # To disable multiscale training, set the value to 0.
@@ -122,8 +123,8 @@ class ExpE(BaseExp):
         def init_yolo(M):
             for m in M.modules():
                 if isinstance(m, nn.BatchNorm2d):
-                    m.eps = 1e-3
-                    m.momentum = 0.03
+                    m.eps = 1e-5
+                    m.momentum = 0.1
 
         self.model = PPYOLOE(
             backbone=CSPResNet(
@@ -163,7 +164,6 @@ class ExpE(BaseExp):
 
         self.model.apply(init_yolo)
         self.model.train()
-        # self.model.head.initialize_biases(1e-2)
         return self.model
 
     def get_data_loader(

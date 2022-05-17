@@ -62,6 +62,8 @@ class Trainer:
         if self.rank == 0:
             os.makedirs(self.file_name, exist_ok=True)
 
+        self.sybn = False
+
         setup_logger(
             self.file_name,
             distributed_rank=self.rank,
@@ -140,6 +142,12 @@ class Trainer:
             "Model Summary: {}".format(get_model_info(model, self.exp.test_size))
         )
         model.to(self.device)
+        if hasattr(self.exp, 'sybn') and self.exp.sybn and self.is_distributed:
+            self.sybn = True
+            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        else:
+            self.sybn = False
+            self.exp.sybn = False
 
         # solver related init
         self.optimizer = self.exp.get_optimizer(self.args.batch_size)
@@ -221,7 +229,8 @@ class Trainer:
         self.save_ckpt(ckpt_name="latest")
 
         if (self.epoch + 1) % self.exp.eval_interval == 0:
-            all_reduce_norm(self.model)
+            if not self.sybn:
+                all_reduce_norm(self.model)
             self.evaluate_and_save_model()
 
     def before_iter(self):
