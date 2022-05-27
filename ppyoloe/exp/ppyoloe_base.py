@@ -79,7 +79,7 @@ class ExpE(BaseExp):
         self.lr_max_epochs = 360
         self.start_factor = 0.
         # learning rate for one image. During training, lr will multiply batchsize.
-        self.basic_lr_per_img = 0.025 / 64.0
+        self.basic_lr_per_img = 0.01 / 64.0
         # name of LRScheduler
         self.scheduler = "ppyoloelr"
         # last #epoch to close augmention like mosaic

@@ -89,7 +89,7 @@ class RepVggBlock(nn.Module):
 
     def forward(self, x):
         if self.deploy:
-            y = self.conv1(x)
+            y = self.conv(x)
         else:
             y = self.conv1(x) + self.conv2(x)
 
@@ -214,4 +214,4 @@ class CSPResNet(nn.Module):
             if idx in self.return_idx:
                 outs.append(x)
 
-        return outs
+        return outs9

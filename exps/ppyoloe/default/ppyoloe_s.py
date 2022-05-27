@@ -11,5 +11,3 @@ class Exp(MyExp):
         self.depth = 0.33
         self.width = 0.50
         self.exp_name = os.path.split(os.path.realpath(__file__))[1].split(".")[0]
-
-        self.basic_lr_per_img = 0.04 / 64.0
