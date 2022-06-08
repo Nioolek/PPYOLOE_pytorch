@@ -214,4 +214,4 @@ class CSPResNet(nn.Module):
             if idx in self.return_idx:
                 outs.append(x)
 
-        return outs9
+        return outs
